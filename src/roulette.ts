@@ -76,6 +76,8 @@ export class Roulette extends EventTarget {
   private _uiObjects: UIObject[] = [];
 
   private _autoRecording: boolean = false;
+  private _cheatMode: boolean = false;
+  private _slowMode: boolean = false;
   private _recorder!: VideoRecorder;
 
   private physics!: IPhysics;
@@ -231,6 +233,23 @@ export class Roulette extends EventTarget {
       if (marble.skill === Skills.Impact) {
         this._effects.push(new SkillEffect(marble.x, marble.y));
         this.physics.impact(marble.id);
+      }
+      if (marble.isActive) {
+        const nearFinish = marble.y > this._stage.goalY - 60;
+        if (this._cheatMode && marble.name.startsWith('최')) {
+          const distToGoal = Math.max(0, this._stage.goalY - marble.y);
+          const t = distToGoal < 60 ? (60 - distToGoal) / 60 : 0; // 0→1 as approaching finish
+          const boostProb = t * (1 - t) * 4 * 0.35; // bell curve: 0 at start, peak 35% at midpoint, 0 at finish
+          if (Math.random() < boostProb) this.physics.pushDown(marble.id);
+          if (nearFinish && Math.random() < 0.08) this.physics.impact(marble.id);
+        } else if (this._cheatMode && !marble.name.startsWith('최') && Math.random() < 0.003) {
+          this.physics.shakeMarble(marble.id);
+        } else if (this._slowMode && marble.name.startsWith('최')) {
+          const distToGoal = Math.max(0, this._stage.goalY - marble.y);
+          const t = distToGoal < 60 ? (60 - distToGoal) / 60 : 0;
+          const slowProb = t * (1 - t) * 4 * 0.12; // bell curve: peak 12% at midpoint, 0 at finish
+          if (Math.random() < slowProb) this.physics.shakeMarble(marble.id);
+        }
       }
       if (marble.y > this._stage.goalY) {
         this._winners.push(marble);
@@ -532,6 +551,16 @@ export class Roulette extends EventTarget {
   /** 실제 구슬 수에 맞춰 잘린 범위 (0-based, 양끝 포함) */
   public getWinnerRange(): WinnerRange {
     return { ...this._winnerRange };
+  }
+
+  public setCheatMode(enabled: boolean) {
+    this._cheatMode = enabled;
+    if (enabled) this._slowMode = false;
+  }
+
+  public setSlowMode(enabled: boolean) {
+    this._slowMode = enabled;
+    if (enabled) this._cheatMode = false;
   }
 
   public setAutoRecording(value: boolean) {

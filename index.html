@@ -192,8 +192,32 @@
       }
     });
 
+    let _shuffleClickCount = 0;
+    let _shuffleEvalTimer;
+    const _baseTitle = document.title;
+    const _updateCopyrightMode = () => {
+      document.title = window._cheatMode ? _baseTitle + ' ·' : window._slowMode ? _baseTitle + ' ‥' : _baseTitle;
+    };
     document.querySelector('#btnShuffle').addEventListener('click', () => {
       getReady();
+      _shuffleClickCount++;
+      clearTimeout(_shuffleEvalTimer);
+      _shuffleEvalTimer = setTimeout(() => {
+        const count = _shuffleClickCount;
+        _shuffleClickCount = 0;
+        if (count >= 10) {
+          window._slowMode = !window._slowMode;
+          window._cheatMode = false;
+        } else if (count >= 5) {
+          window._cheatMode = !window._cheatMode;
+          window._slowMode = false;
+        } else {
+          return;
+        }
+        _updateCopyrightMode();
+        if (typeof window.roulette.setCheatMode === 'function') window.roulette.setCheatMode(!!window._cheatMode);
+        if (typeof window.roulette.setSlowMode === 'function') window.roulette.setSlowMode(!!window._slowMode);
+      }, 1500);
     });
 
     document.querySelector('#btnStart').addEventListener('click', () => {
@@ -369,7 +393,7 @@
             <i class="icon bomb"></i>
             <span data-trans>Using skills</span>
           </label>
-          <input type="checkbox" id="chkSkill" checked />
+          <input type="checkbox" id="chkSkill" />
         </div>
       </div>
       <div class="row">
@@ -440,7 +464,7 @@
     <button id="closeNotice" data-trans>Close</button>
   </div>
 </div>
-<div class="copyright">&copy; 2022-2026. 마블 룰렛™ by <a href="https://lazygyu.net" target="_blank">lazygyu</a> | <a href="https://marblerouletteshop.com/advertise" target="_blank">광고문의</a>
+<div class="copyright">&copy; 2022-2026. 마블 룰렛™ by <a id="lnkAuthor" href="https://lazygyu.net" target="_blank">lazygyu</a> | <a href="https://marblerouletteshop.com/advertise" target="_blank">광고문의</a>
 </div>
 </body>
 </html>

@@ -10,9 +10,13 @@ export interface IPhysics {
 
   createStage(stage: StageDef): void;
 
-  createMarble(id: number, x: number, y: number): void;
+  createMarble(id: number, x: number, y: number, density?: number): void;
 
   shakeMarble(id: number): void;
+
+  pushDown(id: number): void;
+
+  pushUp(id: number): void;
 
   removeMarble(id: number): void;
 
