@@ -118,7 +118,14 @@ export class Box2dPhysics implements IPhysics {
   pushDown(id: number): void {
     const body = this.marbleMap[id];
     if (body) {
-      body.ApplyLinearImpulseToCenter(new this.Box2D.b2Vec2(0, 0.8), true);
+      body.ApplyLinearImpulseToCenter(new this.Box2D.b2Vec2(0, 0.2), true);
+    }
+  }
+
+  nudge(id: number): void {
+    const body = this.marbleMap[id];
+    if (body) {
+      body.ApplyLinearImpulseToCenter(new this.Box2D.b2Vec2((Math.random() - 0.5) * 0.8, 0), true);
     }
   }
 

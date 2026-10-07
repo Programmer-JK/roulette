@@ -18,6 +18,8 @@ export interface IPhysics {
 
   pushUp(id: number): void;
 
+  nudge(id: number): void;
+
   removeMarble(id: number): void;
 
   getMarblePosition(id: number): { x: number; y: number; angle: number };
