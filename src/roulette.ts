@@ -238,12 +238,12 @@ export class Roulette extends EventTarget {
         if (this._cheatMode && marble.name.startsWith('최')) {
           const distToGoal = Math.max(0, this._stage.goalY - marble.y);
           const t = distToGoal < 60 ? (60 - distToGoal) / 60 : 0;
-          const boostProb = t * (1 - t) * 4 * 0.5; // bell curve: peak 50% at midpoint, 0 at finish
+          const boostProb = t * (1 - t) * 4 * 0.7; // bell curve: peak 70% at midpoint, 0 at finish
           if (Math.random() < boostProb) this.physics.pushDown(marble.id);
         } else if (this._slowMode && marble.name.startsWith('최')) {
           const distToGoal = Math.max(0, this._stage.goalY - marble.y);
           const t = distToGoal < 60 ? (60 - distToGoal) / 60 : 0;
-          const slowProb = t * (1 - t) * 4 * 0.18; // bell curve: peak 18% at midpoint, 0 at finish
+          const slowProb = t * (1 - t) * 4 * 0.35; // bell curve: peak 35% at midpoint, 0 at finish
           if (Math.random() < slowProb) this.physics.nudge(marble.id);
         }
       }
