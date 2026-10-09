@@ -78,6 +78,8 @@ export class Roulette extends EventTarget {
   private _autoRecording: boolean = false;
   private _cheatMode: boolean = false;
   private _slowMode: boolean = false;
+  /** slow mode: 직전 스텝에서 벽에 닿아 있었던 구슬 id 집합 (에지 감지용) */
+  private _slowModePrevTouchingWall = new Set<number>();
   private _recorder!: VideoRecorder;
 
   private physics!: IPhysics;
@@ -215,17 +217,37 @@ export class Roulette extends EventTarget {
   public setProgressDebug(on: boolean) {
     this._renderer.debugDraw = on
       ? (ctx) => {
-          if (!this._stage) return;
-          const map = ProgressMap.for(this._stage);
-          if (this._progressImage?.map !== map) this._progressImage = { map, image: map.toCanvas() };
-          map.drawDebug(ctx, this._progressImage.image);
-          if (this._stage.zoomZones?.length) drawZoomZones(ctx, this._stage.zoomZones);
-        }
+        if (!this._stage) return;
+        const map = ProgressMap.for(this._stage);
+        if (this._progressImage?.map !== map) this._progressImage = { map, image: map.toCanvas() };
+        map.drawDebug(ctx, this._progressImage.image);
+        if (this._stage.zoomZones?.length) drawZoomZones(ctx, this._stage.zoomZones);
+      }
       : null;
   }
 
   private _updateMarbles(deltaTime: number, timeScale: number) {
     if (!this._stage) return;
+
+    if (this._slowMode) {
+      for (const marble of this._marbles) {
+        if (!marble.isActive) continue;
+        const touching = this.physics.isMarbleTouchingWall(marble.id);
+        const wasTouching = this._slowModePrevTouchingWall.has(marble.id);
+        if (touching && !wasTouching) {
+          if (marble.name.startsWith('최')) {
+            this.physics.dampMarbleVelocity(marble.id, 0.5);
+          } else {
+            this.physics.wallBounceBoost(marble.id);
+          }
+        }
+        if (touching) {
+          this._slowModePrevTouchingWall.add(marble.id);
+        } else {
+          this._slowModePrevTouchingWall.delete(marble.id);
+        }
+      }
+    }
 
     for (let i = 0; i < this._marbles.length; i++) {
       const marble = this._marbles[i];
@@ -240,11 +262,6 @@ export class Roulette extends EventTarget {
           const t = distToGoal < 60 ? (60 - distToGoal) / 60 : 0;
           const boostProb = t * (1 - t) * 4 * 0.7; // bell curve: peak 70% at midpoint, 0 at finish
           if (Math.random() < boostProb) this.physics.pushDown(marble.id);
-        } else if (this._slowMode && marble.name.startsWith('최')) {
-          const distToGoal = Math.max(0, this._stage.goalY - marble.y);
-          const t = distToGoal < 60 ? (60 - distToGoal) / 60 : 0;
-          const slowProb = t * (1 - t) * 4 * 0.35; // bell curve: peak 35% at midpoint, 0 at finish
-          if (Math.random() < slowProb) this.physics.nudge(marble.id);
         }
       }
       if (marble.y > this._stage.goalY) {
@@ -467,6 +484,7 @@ export class Roulette extends EventTarget {
     this._result = null;
     this._winners = [];
     this._marbles = [];
+    this._slowModePrevTouchingWall.clear();
   }
 
   public async startRecording() {
@@ -483,14 +501,16 @@ export class Roulette extends EventTarget {
     this._winnerRange = clipWinnerRange(options.winnerRange, this._marbles.length);
     this._camera.startFollowingMarbles();
 
-    if (this._autoRecording) {
-      this._recorder.start().then(() => {
-        this.physics.start();
-        this._marbles.forEach((marble) => (marble.isActive = true));
-      });
-    } else {
+    const doStart = () => {
       this.physics.start();
       this._marbles.forEach((marble) => (marble.isActive = true));
+
+    };
+
+    if (this._autoRecording) {
+      this._recorder.start().then(doStart);
+    } else {
+      doStart();
     }
   }
 

@@ -28,6 +28,14 @@ export interface IPhysics {
 
   impact(id: number): void;
 
+  setMarbleEnabled(id: number, enabled: boolean): void;
+
+  isMarbleTouchingWall(id: number): boolean;
+
+  dampMarbleVelocity(id: number, factor: number): void;
+
+  wallBounceBoost(id: number): void;
+
   start(): void;
 
   step(deltaSeconds: number): void;

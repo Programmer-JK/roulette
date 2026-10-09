@@ -190,6 +190,41 @@ export class Box2dPhysics implements IPhysics {
     });
   }
 
+  setMarbleEnabled(id: number, enabled: boolean): void {
+    const body = this.marbleMap[id];
+    if (body) {
+      body.SetEnabled(enabled);
+      if (enabled) body.SetAwake(true);
+    }
+  }
+
+  isMarbleTouchingWall(id: number): boolean {
+    const body = this.marbleMap[id];
+    if (!body) return false;
+    try {
+      const edge = body.GetContactList();
+      if (!edge || !edge.contact || !edge.contact.IsTouching()) return false;
+      return edge.other?.GetType() !== this.Box2D.b2_dynamicBody;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  dampMarbleVelocity(id: number, factor: number): void {
+    const body = this.marbleMap[id];
+    if (body) {
+      const vel = body.GetLinearVelocity();
+      body.SetLinearVelocity(new this.Box2D.b2Vec2(vel.x * factor, vel.y * factor));
+    }
+  }
+
+  wallBounceBoost(id: number): void {
+    const body = this.marbleMap[id];
+    if (body) {
+      body.ApplyLinearImpulseToCenter(new this.Box2D.b2Vec2(0, 2.0), true);
+    }
+  }
+
   start(): void {
     for (const key in this.marbleMap) {
       const marble = this.marbleMap[key];
